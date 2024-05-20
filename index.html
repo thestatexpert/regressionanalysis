@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Training and Testing</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <header>
+        <h1>Training and Testing</h1>
+    </header>
+    <nav>
+        <ul>
+            <li><a href="#notes">Notes</a></li>
+            <li><a href="#formulas">Formulas</a></li>
+            <li><a href="#tips">Tips</a></li>
+        </ul>
+        <form id="searchForm">
+            <input type="text" id="searchInput" placeholder="Search...">
+            <input type="submit" value="Search">
+        </form>
+    </nav>
+    <main>
+        <section id="notes">
+            <h2>Notes</h2>
+			
+            <p><b> Simple Linear: </b></p>
+			<p>lm(y ~ x, dataset)<p>
+			
+			<p><b> Logistic: </b></p>
+			<p>binary(values coded 0 and 1)<br>
+			glm(y ~ x, data, family = binomial) </br>
+			when plotting: geom_smooth(method = "glm", method.args = list(family = binomial()), se = FALSE)</p>
+			
+			<h3>analysis (plots)</h3>
+			<p><b> simple: </b></p>
+			<p> 1. fit the model first, give it a name <br>
+			2. create plot with regression line including geom_smooth()<br>
+			3. ggplot(dataset, aes(x, y)) + geom_point() + <br> geom_smooth(method = lm, se = F/T (Depends, its the standard error), color = .. , linetypes = ...)
+			thememinimal() + labs(title, x, y, caption)</p>
+			
+			<p><b> multiple: </b></p>
+			<p> fitted vs residuals: </p>
+			<p>1. model$fitted.values and model$resiudals </br>
+			2.creating a data frame : data.frame(data.frame(Observed = mtcars$mpg,Fitted = fitted_values,Residuals = residual_values )</br>
+			3.use augmnet(fittedmodelname) to add residuals, fitted, etc to the original dataset(mtcars) </br>
+			4.creating plot : -if you wanna use things from fitted, etc, use the augmented one as dataset in ggplot()</br>
+			- to do a horizontal line, use geom_hline(yintercept = 0, linetype, color)
+			-insert geom_smooth only when you wanna include a regression line, and always include method = lm
+			
+			<p><b>svm</b></p>
+			<p>-svm(mpg ~ wt, data = mtcars, <b>kernel = "radial"</b>) </br>
+			-type = "eps-regression" inside svm() allows fo a margin error </br>
+			-you want that sequence and then you basically create a new dataframe with expand.grid(): </br>
+			wt_seq = seq(min(mtcars$wt), max(mtcars$wt), length.out = 100) </br>
+			hp_seq = seq(min(mtcars$hp), max(mtcars$hp), length.out = 100) </br>
+			grid = expand.grid(wt = wt_seq, hp = hp_seq) </br>
+			-always add the prediction to the responser: grid$mpg = predict(svr_model, newdata = grid)</br>
+			-support_vector_indices = svr_model$index </br>
+			-new data frame that shows only the support vector indices from mtcars: support_vectors = mtcars[support_vector_indices, ]</br>
+			-to get MSE: mse = mean((mtcars$mpg - predictions)^2) [its actual - predicted]</br></p>
+
+
+			<p><b>plotting svm</b></br>
+			-ggplot(grid, aes(x = wt, y = hp, fill = mpg))</br>
+			-its best to use geom_point(mtcars not grid or whatever) if you wanna compare the original and the new on </br>
+			-always remeber to add labs in plots</p>
+			
+			<h3>Creating functions</h3>
+			<p>calculate_tip = function(bill_amount, tip_percent){</br>
+				  percentage = tip_percent / 100 </br>
+				  result = bill_amount * percentage </br>
+				  return(result) </br>
+				}</br>
+				calculate_tip(150, 10) </br>
+				
+			<p><b>neural network</b></p>
+			<p>-neuralnet(mpg ~ wt + hp, data = mtcars, hidden = 2)
+			-plot(nn_model) or plotnet(nn, alpha = 0.5)</br>
+			-this is how you choose a column in dataset : predict(nn_model, mtcars[,c("wt", "hp")])
+			-when working here(or with scaled) , for predict() its predict(mode, predictors) </br>
+			-how to get predictors: testPredictors <- <b>scaled_testData %>% select(-Species)</b> (dplyr)</br>
+			</p>
+				
+			<p><b> ann and svm </b></p>
+			<p>mtcars[ trainIndex,] - shows rows, for testing its '-'</br>
+			-use mpg ~ . - for all columns</br>
+			-always train(fit) using train dataset and predict using test datset</br>
+			-nn_predictions = predict(nn_model, mtcarsTest[,-1]) - because first col is responser</br>
+			-trainIndex = sample(1:nrow(iris), nrow(iris) * 0.7): alternative for dataPartition()</p>
+			
+			<p><b>Scaling the Data</b></p>
+			<p>1. apply the function (1= row, 2= col) : maxs <- apply(trainData, 2, max) </br>
+				mins <- apply(trainData, 2, min) </br>
+				2.scale trained the test: scaled_trainData <- as.data.frame(</br>
+													scale(trainData,</br> 
+													center = mins, </br>
+													scale = maxs - mins))</br>
+				-test is done the same way, just replace</br>
+				-f = as.formula(paste("Species ~", paste(vars[!vars %in% "Species"], collapse = " + ")) : unnecesarry</b>
+				3.rescale(species is the responser): predicted = predictions * (maxs["Species"] - mins["Species"]) + mins["Species"]</br>
+				-can literally just scale like this: scale(USArrests) </p>
+
+
+			<p><b>Linear discriminant analysis</b></p>
+			<p>-do the same as the others: set seed, create partition, train and test data sets,then fit</br>
+			-lda_model <- lda(Species ~ ., data = trainData) </br>
+			-predictions <- predict(lda_model, testData)$class </br>
+			-(predict(lda_model)$x: This generates the discriminant functions (LD1, LD2, etc.) for each observation in the training data based on the LDA model (lda_model).</br>
+			as.data.frame(...): Converts the output of the prediction into a data frame.</br>
+			cbind(...): Combines the predicted discriminant functions with the Species column from the training data (trainData$Species). This combination creates the plotData data frame.):</br>
+			# Create a data frame for plotting </br>
+			plotData <- cbind(as.data.frame(predict(lda_model)$x),</br> 
+                  Species = trainData$Species)</br>
+			ggplot(plotData, aes(LD1, LD2)) + geom_point(aes(color = Species))</br>
+			</p>
+			
+			
+			<p><b>Quadratic discriminant analysis</b></p>
+			<p>qda_model <- qda(diabetes ~ ., data = trainData) the rest are just like above</br>
+			-plotting: # Create a data frame for plotting</br>
+			plotData <- data.frame(predicted = predictions, actual = testData$diabetes)</br>
+			# Plot the QDA predictions</br>
+			ggplot(plotData, aes(x = predicted, fill = actual)) +
+			  geom_bar(position = "fill") </p>
+			  
+			  
+			  <p><b>Principal component analysis</b></p>
+			<p>-this is where clustplot()</br>
+			1. scale data by using scale():USArrests_scaled <- scale(USArrests)</br>
+			2.seed then fit :</br>
+			-kmeans_model <- kmeans(USArrests_scaled, centers = 4) : identify 4 clusters</br>
+			-print(kmeans_model$cluster) : displays cluster assignment </br>
+			-plot: clusplot(USArrests_scaled, kmeans_model$cluster, color=TRUE, shade=TRUE, labels=2, lines=0)
+			</p>
+			
+			<p><b>ANOVA</b></p>
+			<p>anova_result <- aov(Sepal.Length ~ Species, data = iris) </br>
+			summary(anova_result)</br></p>
+			
+			<p><b>MANOVA</b></p>
+			<p>1. convert to factors : mtcars$cyl <- factor(mtcars$cyl) mtcars$am <- factor(mtcars$am)</br>
+			2. these three are response : manova(cbind(mpg, disp, hp) ~ cyl + am, data = mtcars) then summary </p>
+			
+							
+			<h3>importing and randoms</h3>
+			<p> -read.csv(path, header =T/F) </br>
+			-iris$Species = as.numeric(factor(iris$Species)) : converts that column to numerics</br>
+			-if scaled is there, use it on train and test when fitting neral and others, else use the normal test and trained</br>
+			-df <- diabetes[, c("glucose", "mass", "diabetes") : only shows those col</br>
+			-accuracy calculated the same way</br></p>
+			
+			<p># Round the predicted values and clamp them to the range 1-3 
+				predicted_rounded = pmin(pmax(round(predicted), 1), 3) 
+				# Calculate the accuracy 
+				actuals = testData$Species 
+				accuracy = mean(predicted_rounded == actuals) </p>
+				
+			<p><b>Loops</b></>
+			<p>-for:for (i in 1:5) { print(i) } </br>
+			:for (i in seq(from=start, to=end, by=step)) { print(i) total <- total + i }</br>
+			:for (i in 1:n) { factorial <- factorial * i }</br>
+			-while: i <- 1 # Use a while loop to calculate the sum of the numbers while (sum < 50 && i <= length(numbers)) { sum <- sum + numbers[i] i <- i + 1 } # Print the sum of the numbers print(sum)</br>
+			-repeat: repeat { # Generate a random number between 1 and 10 x <- sample(1:10, 1) # Check if the number is greater than 7 if (x > 7) { # If it is, break out of the loop break } }  print(x) </br>
+			:repeat { # Simulate the event if (runif(1) < 0.001) { # If the event occurs, increment the counter variable occurrence_count <- occurrence_count + 1 } # Check if we have reached the desired number of occurrences if (occurrence_count >= num_occurrences) { # If we have reached the desired number of occurrences, break out of the loop break } } # Calculate the estimated probability of the event est_prob <- occurrence_count / num_occurrences # Print the estimated probability cat("Estimated probability: ", est_prob, "\n")</br>
+			:lapply(dataset, mean)
+		
+		
+		
+		
+		</section>
+        <section id="formulas">
+            <h2>Formulas</h2>
+            <p>-seq(from, to, length.out = n)</br>
+            -augment()</br>
+            -geom_tile() - for heatmap plot(goes with fill)</br>
+            -geom_contour() - always has aes(z = response variable)</br>
+            -str(data_frame_name) - to check columns</br>
+            -predict(svrmodel, newmodel) - predictions for responser</br>
+            -seq(min(numbers),max(numbers))</br>
+            -setdiff(x,y) -find values from x that arent in y</br>
+            -col1 = Smarket[, -1] - remove col1 (-c(1,9))</br>
+            -trainIndex = createDataPartition(mtcars$mpg, p = .8, list = FALSE, times = 1) - 80% for training, false=matrix</br>
+            -postResample(predicted, observed, ...) - RMSE, Rsquared and MAE values calculation</br>
+            -observed is always like this : Test<b>$mpg</b></br>
+            -apply(data, row/col, function)</br>
+            -names(trainData) - extracts column names from dataset</br>
+            -accuracy = sum(predictions == testData$diabetes) / nrow(testData) - how you normally calculate accuracy, diabetes=y</p>
+        </section>
+        <section id="tips">
+            <h2>Tips</h2>
+            <p>Add your study tips here...</p>
+        </section>
+    </main>
+    <footer>
+        <p>Good luck on your exam!</p>
+    </footer>
+
+    <!-- JavaScript for search functionality -->
+    <script>
+        document.getElementById('searchForm').addEventListener('submit', function(event) {
+            event.preventDefault();
+            const searchTerm = document.getElementById('searchInput').value.trim().toLowerCase();
+            const sections = document.querySelectorAll('section');
+            sections.forEach(section => {
+                const sectionId = section.getAttribute('id');
+                const sectionTitle = section.querySelector('h2').textContent.toLowerCase();
+                if (sectionTitle.includes(searchTerm)) {
+                    window.location.href = '#' + sectionId;
+                    return;
+                }
+            });
+        });
+    </script>
+</body>
+</html>
